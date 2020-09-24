@@ -14,41 +14,8 @@ namespace Alura.Loja.Testes.ConsoleApp
     {
         static void Main(string[] args)
         {
-            using (var contexto = new LojaContext())
-            {
-                var serviceProvider = contexto.GetInfrastructure<IServiceProvider>();
-                var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-                loggerFactory.AddProvider(SqlLoggerProvider.Create());
-
-                var produtos = contexto.Produtos.ToList();
-
-                ExibeEntries(contexto.ChangeTracker.Entries());
-
-                var novoProduto = new Produto
-                {
-                    Nome = "Sabão em pó",
-                    Categoria = "Limpeza",
-                    Preco = 2.99
-                };
-
-                contexto.Produtos.Add(novoProduto);
-                contexto.Produtos.Remove(novoProduto);
-
-                ExibeEntries(contexto.ChangeTracker.Entries());
-                contexto.SaveChanges();
-
-                ExibeEntries(contexto.ChangeTracker.Entries());
-            }
-
+         
         }
 
-        private static void ExibeEntries(IEnumerable<EntityEntry> entries)
-        {
-            Console.WriteLine("===================");
-            foreach (var e in entries)
-            {
-                Console.WriteLine($"{ e.Entity } - { e.State }");
-            }
-        }
     }
 }
