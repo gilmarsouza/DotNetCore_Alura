@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,82 +14,40 @@ namespace Alura.Loja.Testes.ConsoleApp
     {
         static void Main(string[] args)
         {
-            //GravarUsandoAdoNet();
-            //GravarUsandoEntity();
-            //RecuperarProdutos();
-            //ExcluirProdutos();
-            //RecuperarProdutos();
-            AtualizarProduto();
-
-            Console.WriteLine("Pressione uma tecla para fechar...");
-            Console.ReadKey();
-        }
-
-        private static void AtualizarProduto()
-        {
-            GravarUsandoEntity();
-            RecuperarProdutos();
-
-            using (var repo = new ProdutoDAOEntity())
+            using (var contexto = new LojaContext())
             {
-                var produto = repo.Produtos().First();
+                var serviceProvider = contexto.GetInfrastructure<IServiceProvider>();
+                var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+                loggerFactory.AddProvider(SqlLoggerProvider.Create());
 
-                produto.Nome = "Cassino Royale (Special Edition)";
-                repo.Atualizar(produto);
-            }
+                var produtos = contexto.Produtos.ToList();
 
-            RecuperarProdutos();
-        }
+                ExibeEntries(contexto.ChangeTracker.Entries());
 
-        private static void ExcluirProdutos()
-        {
-            using (var repo = new ProdutoDAOEntity())
-            {
-                var produtos = repo.Produtos();
-                foreach (var produto in produtos)
+                var novoProduto = new Produto
                 {
-                    repo.Remover(produto);
-                }
+                    Nome = "Sabão em pó",
+                    Categoria = "Limpeza",
+                    Preco = 2.99
+                };
+
+                contexto.Produtos.Add(novoProduto);
+                contexto.Produtos.Remove(novoProduto);
+
+                ExibeEntries(contexto.ChangeTracker.Entries());
+                contexto.SaveChanges();
+
+                ExibeEntries(contexto.ChangeTracker.Entries());
             }
+
         }
 
-        private static void RecuperarProdutos()
+        private static void ExibeEntries(IEnumerable<EntityEntry> entries)
         {
-            using (var repo = new ProdutoDAOEntity())
+            Console.WriteLine("===================");
+            foreach (var e in entries)
             {
-                var produtos = repo.Produtos();
-                Console.WriteLine($"Foram encontrados { produtos.Count } produto(s).");
-
-                foreach (var produto in produtos)
-                {
-                    Console.WriteLine(produto.Nome);
-                }
-            }
-        }
-
-        private static void GravarUsandoEntity()
-        {
-            Produto p = new Produto();
-            p.Nome = "Harry Potter e a Ordem da Fênix";
-            p.Categoria = "Livros";
-            p.Preco = 19.89;
-
-            using (var contexto = new ProdutoDAOEntity())
-            {
-                contexto.Adicionar(p);
-            }
-        }
-
-        private static void GravarUsandoAdoNet()
-        {
-            Produto p = new Produto();
-            p.Nome = "Harry Potter e a Ordem da Fênix";
-            p.Categoria = "Livros";
-            p.Preco = 19.89;
-
-            using (var repo = new ProdutoDAO())
-            {
-                repo.Adicionar(p);
+                Console.WriteLine($"{ e.Entity } - { e.State }");
             }
         }
     }
