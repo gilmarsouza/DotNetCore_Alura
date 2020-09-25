@@ -9,7 +9,7 @@
         public double Preco { get; internal set; }
         public override string ToString()
         {
-            return $"Compra: { this.Id }, { this.Quantidade }, { this.ProdutoId }, { this.Preco }";
+            return $"Compra de { this.Quantidade } { this.Produto.Unidade } do produto { this.Produto.Nome }";
         }
     }
 }
