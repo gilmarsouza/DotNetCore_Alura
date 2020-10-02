@@ -94,6 +94,11 @@ namespace CasaDoCodigo.Models
             Quantidade = quantidade;
             PrecoUnitario = precoUnitario;
         }
+
+        public void AtualizaQuantidade(int quantidade)
+        {
+            Quantidade = quantidade;
+        }
     }
 
     public class Pedido : BaseModel
