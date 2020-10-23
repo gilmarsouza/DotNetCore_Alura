@@ -126,7 +126,6 @@ namespace CasaDoCodigo.Areas.Identity
 
         public override IdentityError PasswordRequiresLower()
         {
-            //A senha deve ter pelo menos uma letra minúscula('a' - 'z').
             return new IdentityError
             {
                 Code = nameof(PasswordRequiresLower),
