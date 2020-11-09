@@ -75,7 +75,11 @@
 
   <ItemGroup>
     <None Include="Areas\Cadastro\Views\Home\Index.cshtml" />
+    <None Include="Areas\Cadastro\Views\Home\_NavegacaoCadastro.cshtml" />
     <None Include="Areas\Carrinho\Views\Home\Index.cshtml" />
+    <None Include="Areas\Carrinho\Views\Home\_NavegacaoCarrinho.cshtml" />
+    <None Include="Areas\Catalogo\Views\Home\_BuscaProdutos.cshtml" />
+    <None Include="Areas\Catalogo\Views\Home\_ProdutoCard.cshtml" />
     <None Include="Areas\Identity\Pages\Account\ExternalLogin.cshtml" />
     <None Include="Areas\Identity\Pages\Account\Login.cshtml" />
     <None Include="Areas\Identity\Pages\Account\Logout.cshtml" />
@@ -87,6 +91,7 @@
     <None Include="Areas\Identity\Pages\_ViewImports.cshtml" />
     <None Include="Areas\Identity\Pages\_ViewStart.cshtml" />
     <None Include="Areas\Pedido\Views\Home\Index.cshtml" />
+    <None Include="Areas\Pedido\Views\Home\_NavegacaoPedido.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
