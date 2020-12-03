@@ -2,126 +2,140 @@ using Alura.CoisasAFazer.Core.Commands;
 using Alura.CoisasAFazer.Core.Models;
 using Alura.CoisasAFazer.Infrastructure;
 using Alura.CoisasAFazer.Services.Handlers;
-using Alura.CoisasAFazer.Testes.TestDubles;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Xunit;
+using Moq;
+using Microsoft.Extensions.Logging;
 
 namespace Alura.CoisasAFazer.Testes
 {
     public class CadastraTarefaHandlerExecute
     {
         [Fact]
-        public void QuandoSQLExceptionEhLancadaDeveComunicarResultadoNoComando()
+        public void DadaTarefaComInfoValidasDeveIncluirNoBD()
         {
             //arrange
-            var comando = new CadastraTarefa("Estudar Xunit", new Core.Models.Categoria("Estudo"), new DateTime(2019, 12, 31));
-            //setup do dublê
-            var mock = new Mock<IRepositorioTarefas>();
-            var repo = mock.Object;
-            //como configurar o lançamento da exceção? no próprio teste!
-            mock.Setup(r => r.IncluirTarefas(It.IsAny<Tarefa[]>())).Throws(new Exception("Houve um erro na inclusão..."));
+            var comando = new CadastraTarefa("Estudar Xunit", new Categoria(100, "Estudo"), new DateTime(2019, 12, 31));
 
-            var logger = new Mock<ILogger<CadastraTarefaHandler>>().Object;
-
-            var handler = new CadastraTarefaHandler(repo, logger);
-
-            //act: mudança no design da solução! TDD
-            var resultado = handler.Execute(comando);
-
-            //assert
-            Assert.False(resultado.Success);
-        }
-
-        [Fact]
-        public void DadaTarefaComInformacoesValidasDeveIncluirNoRepositorio()
-        {
-            //arrange
-            var comando = new CadastraTarefa("Estudar Xunit", new Core.Models.Categoria("Estudo"), new DateTime(2019, 12, 31));
-            //setup do dublê
-            var repo = new RepoFakeTarefas();
             var mock = new Mock<ILogger<CadastraTarefaHandler>>();
-            var logger = mock.Object;
 
-            var handler = new CadastraTarefaHandler(repo, logger);
-
-            //act
-            var resultado = handler.Execute(comando);
-
-            //assert
-            Assert.True(resultado.Success);
-            var tarefa = repo.ObtemTarefas(t => t.Categoria.Descricao == "Estudo").FirstOrDefault();
-            Assert.NotNull(tarefa);
-            Assert.Equal("Estudar Xunit", tarefa.Titulo);
-            Assert.Equal(new DateTime(2019, 12, 31), tarefa.Prazo);
-        }
-
-        [Fact]
-        public void DataTarefaComInformacoesValidasDeveIncluirNoRepositorio_InMemoryDatabase()
-        {
-            //arrange
-            var comando = new CadastraTarefa("Estudar Xunit", new Core.Models.Categoria("Estudo"), new DateTime(2019, 12, 31));
-
-            //setup do dublê
             var options = new DbContextOptionsBuilder<DbTarefasContext>()
-                .UseInMemoryDatabase("Teste de Integração")
+                .UseInMemoryDatabase("DbTarefasContext")
                 .Options;
             var contexto = new DbTarefasContext(options);
             var repo = new RepositorioTarefa(contexto);
 
-            var mock = new Mock<ILogger<CadastraTarefaHandler>>();
-            var logger = mock.Object;
-
-            var handler = new CadastraTarefaHandler(repo, logger);
+            var handler = new CadastraTarefaHandler(repo, mock.Object);
 
             //act
-            handler.Execute(comando);
+            handler.Execute(comando); //SUT >> CadastraTarefaHandlerExecute
 
             //assert
-            var tarefa = repo.ObtemTarefas(t => t.Categoria.Descricao == "Estudo").FirstOrDefault();
+            var tarefa = repo.ObtemTarefas(t => t.Titulo == "Estudar Xunit").FirstOrDefault();
             Assert.NotNull(tarefa);
-            Assert.Equal("Estudar Xunit", tarefa.Titulo);
-            Assert.Equal(new DateTime(2019, 12, 31), tarefa.Prazo);
         }
 
-        delegate void CaptureLogMessage(LogLevel l, EventId id, object o, Exception e, Func<object, Exception, string> func);
+        delegate void CapturaMensagemLog(LogLevel level, EventId eventId, object state, Exception exception, Func<object, Exception, string> function);
 
         [Fact]
-        public void DadaTarefaComInformacoesValidasDeveLogarAOperacao()
+        public void DadaTarefaComInfoValidasDeveLogar()
         {
             //arrange
-            var comando = new CadastraTarefa("Estudar Xunit", new Core.Models.Categoria("Estudo"), new DateTime(2019, 12, 31));
+            var tituloTarefaEsperado = "Usar Moq para aprofundar conhecimento de API";
+            var comando = new CadastraTarefa(tituloTarefaEsperado, new Categoria(100, "Estudo"), new DateTime(2019, 12, 31));
 
-            //setup dos dublês
-            var options = new DbContextOptionsBuilder<DbTarefasContext>()
-                .UseInMemoryDatabase("Teste de Integração")
-                .Options;
-            var contexto = new DbTarefasContext(options);
-            var repo = new RepositorioTarefa(contexto);
+            var mockLogger = new Mock<ILogger<CadastraTarefaHandler>>();
 
-            var mock = new Mock<ILogger<CadastraTarefaHandler>>();
+            LogLevel levelCapturado = LogLevel.Error;
+            string mensagemCapturada = string.Empty;
 
-            string logOutput = string.Empty;
-            CaptureLogMessage capture = (l, i, v, e, f) =>
+            CapturaMensagemLog captura = (level, eventId, state, exception, func) =>
             {
-                logOutput = logOutput + v.ToString();
+                levelCapturado = level;
+                mensagemCapturada = func(state, exception);
             };
 
-            mock.Setup(x => x.Log(LogLevel.Debug, It.IsAny<EventId>(), It.IsAny<object>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback(capture);
-            var logger = mock.Object;
+            mockLogger.Setup(l => 
+                l.Log(
+                    It.IsAny<LogLevel>(), //nível de log => LogError
+                    It.IsAny<EventId>(), //identificador do evento
+                    It.IsAny<object>(), //objeto que será logado
+                    It.IsAny<Exception>(),    //exceção que será logada
+                    It.IsAny<Func<object, Exception, string>>() //função que converte objeto+exceção >> string)
+                )).Callback(captura);
 
-            var handler = new CadastraTarefaHandler(repo, logger);
+            var mock = new Mock<IRepositorioTarefas>();
+
+            var handler = new CadastraTarefaHandler(mock.Object, mockLogger.Object);
 
             //act
-            handler.Execute(comando);
+            handler.Execute(comando); //SUT >> CadastraTarefaHandlerExecute
 
             //assert
-            //COMO VERIFICAR SE O LOG FOI REALIZADO?
-            Assert.Contains("Persistindo a tarefa...", logOutput);
+            Assert.Equal(LogLevel.Debug, levelCapturado);
+            Assert.Contains(tituloTarefaEsperado, mensagemCapturada);
         }
+
+        [Fact]
+        public void QuandoExceptionForLancadaResultadoIsSuccessDeveSerFalse()
+        {
+            //arrange
+            var comando = new CadastraTarefa("Estudar Xunit", new Categoria("Estudo"), new DateTime(2019, 12, 31));
+
+            var mockLogger = new Mock<ILogger<CadastraTarefaHandler>>();
+
+            var mock = new Mock<IRepositorioTarefas>();
+
+            mock.Setup(r => r.IncluirTarefas(It.IsAny<Tarefa[]>()))
+                .Throws(new Exception("Houve um erro na inclusão de tarefas"));
+
+            var repo = mock.Object;
+
+            var handler = new CadastraTarefaHandler(repo, mockLogger.Object);
+
+            //act
+            CommandResult resultado = handler.Execute(comando);
+
+            //assert
+            Assert.False(resultado.IsSuccess);
+        }
+
+        [Fact]
+        public void QuandoExceptionForLancadaDeveLogarAMensagemDaExcecao()
+        {
+            //arrange
+            var mensagemDeErroEsperada = "Houve um erro na inclusão de tarefas";
+            var excecaoEsperada = new Exception(mensagemDeErroEsperada);
+
+            var comando = new CadastraTarefa("Estudar Xunit", new Categoria("Estudo"), new DateTime(2019, 12, 31));
+
+            var mockLogger = new Mock<ILogger<CadastraTarefaHandler>>();
+
+            var mock = new Mock<IRepositorioTarefas>();
+
+            mock.Setup(r => r.IncluirTarefas(It.IsAny<Tarefa[]>()))
+                .Throws(excecaoEsperada);
+
+            var repo = mock.Object;
+
+            var handler = new CadastraTarefaHandler(repo, mockLogger.Object);
+
+            //act
+            CommandResult resultado = handler.Execute(comando);
+
+            //assert
+            mockLogger.Verify(l => 
+                l.Log(
+                    LogLevel.Error, //nível de log => LogError
+                    It.IsAny<EventId>(), //identificador do evento
+                    It.IsAny<object>(), //objeto que será logado
+                    excecaoEsperada,    //exceção que será logada
+                    It.IsAny<Func<object, Exception, string>>()
+                ), //função que converte objeto+exceção >> string
+                Times.Once());
+        }
+
     }
 }

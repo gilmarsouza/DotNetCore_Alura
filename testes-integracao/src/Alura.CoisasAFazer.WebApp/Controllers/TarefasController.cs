@@ -2,7 +2,6 @@
 using Alura.CoisasAFazer.WebApp.Models;
 using Alura.CoisasAFazer.Core.Commands;
 using Alura.CoisasAFazer.Services.Handlers;
-using Alura.CoisasAFazer.Infrastructure;
 
 namespace Alura.CoisasAFazer.WebApp.Controllers
 {
@@ -20,10 +19,8 @@ namespace Alura.CoisasAFazer.WebApp.Controllers
                 return NotFound("Categoria não encontrada");
             }
 
-            var repositorio = new RepositorioTarefa();
-
             var comando = new CadastraTarefa(model.Titulo, categoria, model.Prazo);
-            var handler = new CadastraTarefaHandler(repositorio);
+            var handler = new CadastraTarefaHandler();
             handler.Execute(comando);
             return Ok();
         }
