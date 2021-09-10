@@ -1,24 +1,22 @@
-﻿using Alura.ListaLeitura.Persistencia;
-using Alura.ListaLeitura.Modelos;
+﻿using Alura.ListaLeitura.Modelos;
 using Alura.ListaLeitura.WebApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using Alura.ListaLeitura.HttpClients;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 namespace Alura.ListaLeitura.WebApp.Controllers
 {
     [Authorize]
     public class HomeController : Controller
     {
-        private readonly IRepository<Livro> _repo;
         private readonly LivroApiClient _api;
 
-        public HomeController(IRepository<Livro> repository, LivroApiClient api)
+        public HomeController(LivroApiClient api)
         {
-            _repo = repository;
             _api = api;
         }
 
@@ -30,6 +28,8 @@ namespace Alura.ListaLeitura.WebApp.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var token = HttpContext.User.Claims.First(c => c.Type == "Token").Value;
+
             var model = new HomeViewModel
             {
                 ParaLer = await ListaDoTipo(TipoListaLeitura.ParaLer),
