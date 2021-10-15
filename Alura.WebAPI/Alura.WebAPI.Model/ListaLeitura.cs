@@ -17,7 +17,7 @@ namespace Alura.ListaLeitura.Modelos
         {
             return mapa.First(s => s.Value == tipo).Key;
         }
-
+         
         public static TipoListaLeitura ParaTipo(this string texto)
         {
             return mapa.First(t => t.Key == texto).Value;
